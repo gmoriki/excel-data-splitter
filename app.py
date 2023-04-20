@@ -1,27 +1,3 @@
-# Explain by GPT-4
-"""
-このコードは、Excelファイルからデータを処理し、新しいExcelファイルに書き出すプログラムです。以下に、主な機能をわかりやすく説明します。
-
-Excelファイルを読み込む。
-シート内の結合されたセルを解除し、元のセルと同じ値を入れる。
-隣接するセルが空でなければ、枠線を引く。
-枠線で囲まれたテーブルを見つける。
-見つけたテーブルをデータフレーム（表形式のデータ）に変換する。
-データフレームを新しいExcelファイルの複数シートに書き出す。
-このプログラムでは、まずinput.xlsxというExcelファイルを読み込みます。次に、各シートに対して処理を行い、最後にoutput.xlsxという名前の新しいExcelファイルに書き出します。
-
-具体的な処理の流れは以下の通りです。
-
-結合されたセルを解除し、元のセルと同じ値を入れる。
-隣接するセルが空でなければ、枠線を引く。
-枠線で囲まれていないセルを削除する。
-シート内の枠線で括られたテーブルを検出する。
-検出したテーブルをデータフレームに変換する。
-データフレームを新しいExcelファイルの複数シートに出力する。
-このプログラムを実行すると、input.xlsxの内容が処理されて、output.xlsxに書き出されます。
-
-"""
-
 import openpyxl
 from openpyxl.styles import Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -30,6 +6,13 @@ import pandas as pd
 
 
 def apply_border_to_adjacent_cells(ws):
+    """
+    Applies border to cells that are adjacent to non-empty cells.
+
+    Args:
+        ws (Worksheet): The openpyxl Worksheet object to process.
+    """
+
     max_row = ws.max_row
     max_col = ws.max_column
 
@@ -53,6 +36,17 @@ def apply_border_to_adjacent_cells(ws):
 
 
 def apply_border_to_range(ws, min_row, max_row, min_col, max_col):
+    """
+    Applies border to a range of cells within the specified row and column boundaries.
+
+    Args:
+        ws (Worksheet): The openpyxl Worksheet object to process.
+        min_row (int): The minimum row index.
+        max_row (int): The maximum row index.
+        min_col (int): The minimum column index.
+        max_col (int): The maximum column index.
+    """
+
     thin_border = Border(
         left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin")
     )
@@ -63,6 +57,13 @@ def apply_border_to_range(ws, min_row, max_row, min_col, max_col):
 
 
 def unmerge_and_fill_cells(ws):
+    """
+    Unmerges merged cells and fills unmerged cells with the same value as the original cell.
+
+    Args:
+        ws (Worksheet): The openpyxl Worksheet object to process.
+    """
+
     merged_ranges = ws.merged_cells.ranges.copy()
     for merged_cells in merged_ranges:
         top_left_cell = ws.cell(row=merged_cells.min_row, column=merged_cells.min_col)
@@ -84,6 +85,16 @@ def unmerge_and_fill_cells(ws):
 
 
 def find_bordered_tables(ws):
+    """
+    Finds tables that are enclosed by borders in the worksheet.
+
+    Args:
+        ws (Worksheet): The openpyxl Worksheet object to process.
+
+    Returns:
+        list: A list of tuples containing the start and end cell coordinates of the bordered tables.
+    """
+
     tables = []
     max_row = ws.max_row
     max_col = ws.max_column
@@ -112,6 +123,18 @@ def find_bordered_tables(ws):
 
 
 def read_table_as_dataframe(ws, start, end):
+    """
+    Reads a table within the specified cell range as a pandas DataFrame.
+
+    Args:
+        ws (Worksheet): The openpyxl Worksheet object to process.
+        start (str): The start cell coordinate of the table.
+        end (str): The end cell coordinate of the table.
+
+    Returns:
+        DataFrame: A pandas DataFrame object containing the table data.
+    """
+
     data = []
     for row in ws[start:end]:
         data.append([cell.value for cell in row])
@@ -119,6 +142,15 @@ def read_table_as_dataframe(ws, start, end):
 
 
 def save_dataframe_to_excel_sheet(df, workbook, sheet_name):
+    """
+    Saves a pandas DataFrame to a new sheet in the specified openpyxl Workbook.
+
+    Args:
+        df (DataFrame): The pandas DataFrame to save.
+        workbook (Workbook): The openpyxl Workbook to save the DataFrame to.
+        sheet_name (str): The name of the new sheet to create.
+    """
+
     ws = workbook.create_sheet(sheet_name)
 
     for r_idx, row in enumerate(dataframe_to_rows(df, index=False, header=True), start=1):
@@ -127,6 +159,13 @@ def save_dataframe_to_excel_sheet(df, workbook, sheet_name):
 
 
 def unmerge_and_delete_unbordered_cells(ws):
+    """
+    Unmerges cells outside the borders and deletes cells that are not bordered.
+
+    Args:
+        ws (Worksheet): The openpyxl Worksheet object to process.
+    """
+
     # 枠線で囲まれたセルの範囲を特定する
     bordered_cells = []
 
@@ -153,16 +192,14 @@ def unmerge_and_delete_unbordered_cells(ws):
                 ws[cell.coordinate].value = None
 
 
-def convert_formula_to_plain_text(ws):
-    # 関数の返り値をプレーンテキストに変換する
-    for i, row in enumerate(ws.iter_rows(), start=1):
-        for j, cell in enumerate(row, start=1):
-            ws.cell(row=i, column=j).value = cell.value
-
-    # return new_worksheet
-
-
 def main(input_excel_file, output_excel_file):
+    """
+    Processes an input Excel file and saves the processed data to a new output Excel file.
+
+    Args:
+        input_excel_file (str): The path of the input Excel file.
+        output_excel_file (str): The path of the output Excel file.
+    """
     # input_excel_file = "input.xlsx"
     # Excelファイルを開く
     wb = openpyxl.load_workbook(input_excel_file, data_only=True)
@@ -195,4 +232,5 @@ def main(input_excel_file, output_excel_file):
     output_wb.save(output_excel_file)
 
 
-main(r"./input.xlsx", r"./output.xlsx")
+if __name__ == "__main__":
+    main("./input.xlsx", "./output.xlsx")
